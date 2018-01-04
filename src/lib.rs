@@ -84,6 +84,15 @@ pub enum Color {
     Black
 }
 
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            &Color::Black => "black",
+            &Color::White => "white",
+        })
+    }
+}
+
 pub type FenResult<'a, T> = Result<T, FenError<'a>>;
 
 #[derive(Debug, Eq, PartialEq)]
