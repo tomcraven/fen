@@ -1,14 +1,16 @@
-//! This module provides a pretty straightfoward interface for converting
-//! [Forsyth-Edwards notation][1] (FEN) into the state of a game of chess and
-//! back.
-//!
-//! FEN is a way of representing a board a string. This crate provides one such
-//! representation, `fen::BoardState`. If you want to be able to read FEN, you
-//! will to need to create a way to convert `BoardState` to your own board
-//! representation.  If you want to export FEN, you will need to convert your
-//! own board representation to `BoardState`.
-//!
-//! [1]: https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
+use std::fmt;
+
+// This module provides a pretty straightfoward interface for converting
+// [Forsyth-Edwards notation][1] (FEN) into the state of a game of chess and
+// back.
+//
+// FEN is a way of representing a board a string. This crate provides one such
+// representation, `fen::BoardState`. If you want to be able to read FEN, you
+// will to need to create a way to convert `BoardState` to your own board
+// representation.  If you want to export FEN, you will need to convert your
+// own board representation to `BoardState`.
+//
+// [1]: https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
 
 /// The state of a board. You can convert this to and from FEN.
 #[derive(Debug, Eq, PartialEq)]
