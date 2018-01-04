@@ -281,7 +281,7 @@ impl BoardState {
 
         let parts = [placement, side_to_play, castling,
                      en_passant, halfmove, fullmove];
-        parts.connect(" ")
+        parts.join(" ")
     }
 
     fn make_placement(&self) -> String {
