@@ -233,6 +233,15 @@ impl fmt::Display for Color {
     }
 }
 
+impl Color {
+    pub fn opposite(&self) -> Color {
+        match self {
+            &Color::Black => Color::White,
+            &Color::White => Color::Black,
+        }
+    }
+}
+
 pub type FenResult<'a, T> = Result<T, FenError<'a>>;
 
 #[derive(Debug, Eq, PartialEq)]
