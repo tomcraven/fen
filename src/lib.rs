@@ -59,13 +59,73 @@ pub struct BoardState {
 
     /// Number of full moves since the beginning of the game. This value begins
     /// at 1 and is incremented after black makes a move.
-    pub fullmove_number: u64
+    pub fullmove_number: u64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Rank {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum File {
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Position {
+    pub rank: Rank,
+    pub file: File,
+}
+
+impl Position {
+    fn from_rank_and_file(rank: usize, file: usize) -> Position {
+        Position {
+            rank: match rank {
+                1 => Rank::A,
+                2 => Rank::B,
+                3 => Rank::C,
+                4 => Rank::D,
+                5 => Rank::E,
+                6 => Rank::F,
+                7 => Rank::G,
+                8 => Rank::H,
+                _ => panic!("invalid rank {}", rank),
+            },
+            file: match file {
+                1 => File::One,
+                2 => File::Two,
+                3 => File::Three,
+                4 => File::Four,
+                5 => File::Five,
+                6 => File::Six,
+                7 => File::Seven,
+                8 => File::Eight,
+                _ => panic!("invalid file {}", file),
+            },
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Piece {
     pub kind: PieceKind,
-    pub color: Color
+    pub color: Color,
+    pub position: Position,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -75,21 +135,25 @@ pub enum PieceKind {
     Bishop,
     Rook,
     Queen,
-    King
+    King,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Copy)]
 pub enum Color {
     White,
-    Black
+    Black,
 }
 
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            &Color::Black => "black",
-            &Color::White => "white",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                &Color::Black => "black",
+                &Color::White => "white",
+            }
+        )
     }
 }
 
@@ -143,7 +207,7 @@ impl BoardState {
             black_can_ooo: black_can_ooo,
             en_passant_square: en_passant_square,
             halfmove_clock: halfmove_clock,
-            fullmove_number: fullmove_number
+            fullmove_number: fullmove_number,
         })
     }
 
@@ -157,6 +221,7 @@ impl BoardState {
 
         for (rank, pieces) in lines.iter().rev().enumerate() {
             let mut file = 0;
+            let position = Position::from_rank_and_file(rank, file);
 
             for piece_char in pieces.chars() {
                 match piece_char.to_digit(10) {
@@ -166,16 +231,14 @@ impl BoardState {
                     }
 
                     // This is indicating a piece
-                    None => {
-                        match Piece::from_char(piece_char) {
-                            Some(piece) => {
-                                placement[rank * 8 + file] = Some(piece);
-                                file += 1;
-                            },
-
-                            None => return Err(FenError::UnknownPiece(piece_char))
+                    None => match Piece::from_char_and_position(piece_char, position.clone()) {
+                        Some(piece) => {
+                            placement[rank * 8 + file] = Some(piece);
+                            file += 1;
                         }
-                    }
+
+                        None => return Err(FenError::UnknownPiece(piece_char)),
+                    },
                 }
             }
         }
@@ -198,7 +261,7 @@ impl BoardState {
         match side_to_play {
             "w" => Ok(Color::White),
             "b" => Ok(Color::Black),
-            _ => Err(FenError::NoSuchSide(side_to_play))
+            _ => Err(FenError::NoSuchSide(side_to_play)),
         }
     }
 
@@ -232,7 +295,7 @@ impl BoardState {
             'f' => 5,
             'g' => 6,
             'h' => 7,
-            _ => return Err(FenError::BadEnPassant(en_passant))
+            _ => return Err(FenError::BadEnPassant(en_passant)),
         };
 
         let rank = match rank {
@@ -244,7 +307,7 @@ impl BoardState {
             '6' => 5,
             '7' => 6,
             '8' => 7,
-            _ => return Err(FenError::BadEnPassant(en_passant))
+            _ => return Err(FenError::BadEnPassant(en_passant)),
         };
 
         Ok(Some(file + rank * 8))
@@ -253,14 +316,14 @@ impl BoardState {
     fn parse_halfmove(halfmove: &str) -> FenResult<u64> {
         match halfmove.parse() {
             Ok(n) => Ok(n),
-            Err(_) => Err(FenError::BadHalfmove(halfmove))
+            Err(_) => Err(FenError::BadHalfmove(halfmove)),
         }
     }
 
     fn parse_fullmove(fullmove: &str) -> FenResult<u64> {
         match fullmove.parse() {
             Ok(n) => Ok(n),
-            Err(_) => Err(FenError::BadFullmove(fullmove))
+            Err(_) => Err(FenError::BadFullmove(fullmove)),
         }
     }
 
@@ -279,8 +342,14 @@ impl BoardState {
         let halfmove = self.make_halfmove();
         let fullmove = self.make_fullmove();
 
-        let parts = [placement, side_to_play, castling,
-                     en_passant, halfmove, fullmove];
+        let parts = [
+            placement,
+            side_to_play,
+            castling,
+            en_passant,
+            halfmove,
+            fullmove,
+        ];
         parts.join(" ")
     }
 
@@ -301,7 +370,7 @@ impl BoardState {
                         placement.push_str(&piece.to_string());
                     }
 
-                    None => { blanks += 1 }
+                    None => blanks += 1,
                 }
             }
 
@@ -322,16 +391,24 @@ impl BoardState {
     fn make_side_to_play(&self) -> String {
         match self.side_to_play {
             Color::White => "w",
-            Color::Black => "b"
+            Color::Black => "b",
         }.to_owned()
     }
 
     fn make_castling(&self) -> String {
         let mut castling = String::new();
-        if self.white_can_oo  { castling.push('K') }
-        if self.white_can_ooo { castling.push('Q') }
-        if self.black_can_oo  { castling.push('k') }
-        if self.black_can_ooo { castling.push('q') }
+        if self.white_can_oo {
+            castling.push('K')
+        }
+        if self.white_can_ooo {
+            castling.push('Q')
+        }
+        if self.black_can_oo {
+            castling.push('k')
+        }
+        if self.black_can_ooo {
+            castling.push('q')
+        }
 
         if castling != "" {
             castling
@@ -352,7 +429,7 @@ impl BoardState {
                     5 => 'f',
                     6 => 'g',
                     7 => 'h',
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 };
 
                 let rank = match en_passant / 8 {
@@ -364,13 +441,13 @@ impl BoardState {
                     5 => '6',
                     6 => '7',
                     7 => '8',
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 };
 
                 format!("{}{}", file, rank)
-            },
+            }
 
-            None => "-".to_owned()
+            None => "-".to_owned(),
         }
     }
 
@@ -384,7 +461,7 @@ impl BoardState {
 }
 
 impl Piece {
-    pub fn from_char(piece_char: char) -> Option<Piece> {
+    pub fn from_char_and_position(piece_char: char, position: Position) -> Option<Piece> {
         let (color, kind) = match piece_char {
             'P' => (Color::White, PieceKind::Pawn),
             'N' => (Color::White, PieceKind::Knight),
@@ -398,10 +475,14 @@ impl Piece {
             'r' => (Color::Black, PieceKind::Rook),
             'q' => (Color::Black, PieceKind::Queen),
             'k' => (Color::Black, PieceKind::King),
-            _ => return None
+            _ => return None,
         };
 
-        Some(Piece { color: color, kind: kind })
+        Some(Piece {
+            color: color,
+            kind: kind,
+            position: position,
+        })
     }
 }
 
@@ -419,7 +500,7 @@ impl ToString for Piece {
             (&Color::Black, &PieceKind::Bishop) => "b",
             (&Color::Black, &PieceKind::Rook) => "r",
             (&Color::Black, &PieceKind::Queen) => "q",
-            (&Color::Black, &PieceKind::King) => "k"
+            (&Color::Black, &PieceKind::King) => "k",
         }.to_owned()
     }
 }
