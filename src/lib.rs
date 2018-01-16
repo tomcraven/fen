@@ -63,7 +63,7 @@ pub struct BoardState {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Rank {
+pub enum File {
     A,
     B,
     C,
@@ -75,7 +75,7 @@ pub enum Rank {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum File {
+pub enum Rank {
     One,
     Two,
     Three,
@@ -93,28 +93,104 @@ pub struct Position {
 }
 
 impl Position {
+    pub fn north(&self) -> Option<Position> {
+        match match self.rank {
+            Rank::One => Some(Rank::Two),
+            Rank::Two => Some(Rank::Three),
+            Rank::Three => Some(Rank::Four),
+            Rank::Four => Some(Rank::Five),
+            Rank::Five => Some(Rank::Six),
+            Rank::Six => Some(Rank::Seven),
+            Rank::Seven => Some(Rank::Eight),
+            Rank::Eight => None,
+        } {
+            Some(rank) => Some(Position {
+                rank: rank,
+                file: self.file.clone(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn south(&self) -> Option<Position> {
+        match match self.rank {
+            Rank::One => None,
+            Rank::Two => Some(Rank::One),
+            Rank::Three => Some(Rank::Two),
+            Rank::Four => Some(Rank::Three),
+            Rank::Five => Some(Rank::Four),
+            Rank::Six => Some(Rank::Five),
+            Rank::Seven => Some(Rank::Six),
+            Rank::Eight => Some(Rank::Seven),
+        } {
+            Some(rank) => Some(Position {
+                rank: rank,
+                file: self.file.clone(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn west(&self) -> Option<Position> {
+        match match self.file {
+            File::A => None,
+            File::B => Some(File::A),
+            File::C => Some(File::B),
+            File::D => Some(File::C),
+            File::E => Some(File::D),
+            File::F => Some(File::E),
+            File::G => Some(File::F),
+            File::H => Some(File::G),
+        } {
+            Some(file) => Some(Position {
+                rank: self.rank.clone(),
+                file: file,
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn east(&self) -> Option<Position> {
+        match match self.file {
+            File::A => Some(File::B),
+            File::B => Some(File::C),
+            File::C => Some(File::D),
+            File::D => Some(File::E),
+            File::E => Some(File::F),
+            File::F => Some(File::G),
+            File::G => Some(File::H),
+            File::H => None,
+        } {
+            Some(file) => Some(Position {
+                rank: self.rank.clone(),
+                file: file,
+            }),
+            _ => None,
+        }
+    }
+
     fn from_rank_and_file(rank: usize, file: usize) -> Position {
         Position {
             rank: match rank {
-                1 => Rank::A,
-                2 => Rank::B,
-                3 => Rank::C,
-                4 => Rank::D,
-                5 => Rank::E,
-                6 => Rank::F,
-                7 => Rank::G,
-                8 => Rank::H,
+                1 => Rank::One,
+                2 => Rank::Two,
+                3 => Rank::Three,
+                4 => Rank::Four,
+                5 => Rank::Five,
+                6 => Rank::Six,
+                7 => Rank::Seven,
+                8 => Rank::Eight,
                 _ => panic!("invalid rank {}", rank),
             },
             file: match file {
-                1 => File::One,
-                2 => File::Two,
-                3 => File::Three,
-                4 => File::Four,
-                5 => File::Five,
-                6 => File::Six,
-                7 => File::Seven,
-                8 => File::Eight,
+                1 => File::A,
+                2 => File::B,
+                3 => File::C,
+                4 => File::D,
+                5 => File::E,
+                6 => File::F,
+                7 => File::G,
+                8 => File::H,
                 _ => panic!("invalid file {}", file),
             },
         }
